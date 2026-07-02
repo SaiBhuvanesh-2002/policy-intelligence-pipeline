@@ -1,0 +1,32 @@
+.tab-btn.active {
+  border-bottom-color: #0b5cab;
+  color: #0b5cab;
+}
+.tab-btn:not(.active):hover {
+  color: #334155;
+  border-bottom-color: #cbd5e1;
+}
+.sev-high { background:#fef2f2; color:#b91c1c; border-color:#fecaca; }
+.sev-medium { background:#fffbeb; color:#b45309; border-color:#fde68a; }
+.sev-low { background:#f0fdf4; color:#15803d; border-color:#bbf7d0; }
+
+.diff-add { background:#dcfce7; color:#166534; }
+.diff-del { background:#fee2e2; color:#991b1b; text-decoration: line-through; }
+
+.status-pending { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+.status-approved { background:#f0fdf4; color:#15803d; border-color:#bbf7d0; }
+.status-rejected { background:#fef2f2; color:#b91c1c; border-color:#fecaca; }
+.status-changes_requested { background:#fffbeb; color:#b45309; border-color:#fde68a; }
+
+.kind-seed { background:#eef6ff; color:#0b5cab; border-color:#bfdbfe; }
+.kind-policy { background:#f8fafc; color:#475569; border-color:#e2e8f0; }
+
+.version-card { border-left: 3px solid #0b5cab; }
+.change-card { border-left: 3px solid #f59e0b; }
+
+.diff-block { max-height: 6rem; overflow: hidden; position: relative; }
+.diff-block.expanded { max-height: none; }
+.diff-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 2rem; background: linear-gradient(transparent, white); pointer-events: none; }
+.diff-block.expanded .diff-fade { display: none; }
+
+pre.code { background:#0f172a; color:#e2e8f0; border-radius:8px; padding:12px; font-size:12px; overflow:auto; line-height:1.5; }

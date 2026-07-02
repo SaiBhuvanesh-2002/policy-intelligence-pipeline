@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Policy Intelligence Pipeline — Cotiviti</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 600: '#0b5cab', 700: '#094a8a', 50: '#eef6ff' },
+            ink: '#0f172a',
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased">
+  <!-- Top bar -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-20">
+    <div class="max-w-7xl mx-auto px-6 py-3 flex items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-lg bg-brand-600 text-white grid place-items-center font-bold">PI</div>
+        <div>
+          <h1 class="text-base font-semibold leading-tight">Policy Intelligence Pipeline</h1>
+          <p class="text-xs text-slate-500 leading-tight">Policy text → executable payment-integrity edits, with human sign-off</p>
+        </div>
+      </div>
+      <div class="ml-auto flex items-center gap-3 text-xs">
+        <span id="engine-badge" class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">engine: …</span>
+        <button id="prepare-demo-btn" class="px-3 py-1.5 rounded-md bg-brand-600 text-white hover:bg-brand-700 font-medium">Prepare demo</button>
+        <button id="reseed-btn" class="px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50 font-medium">Reset demo data</button>
+      </div>
+    </div>
+    <nav class="max-w-7xl mx-auto px-6 flex gap-1 text-sm">
+      <button data-tab="dashboard" class="tab-btn px-3 py-2 border-b-2 border-transparent font-medium">Dashboard</button>
+      <button data-tab="documents" class="tab-btn px-3 py-2 border-b-2 border-transparent font-medium">Policies & Changes</button>
+      <button data-tab="review" class="tab-btn px-3 py-2 border-b-2 border-transparent font-medium">SME Review Queue <span id="queue-count" class="ml-1 text-xs"></span></button>
+      <button data-tab="impact" class="tab-btn px-3 py-2 border-b-2 border-transparent font-medium">Impact / Dollars Caught</button>
+      <button data-tab="ingest" class="tab-btn px-3 py-2 border-b-2 border-transparent font-medium">Ingest</button>
+      <button data-tab="audit" class="tab-btn px-3 py-2 border-b-2 border-transparent font-medium">Audit Trail</button>
+    </nav>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-6">
+    <!-- DASHBOARD -->
+    <section id="tab-dashboard" class="tab-panel">
+      <div id="stat-cards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>
+      <div id="demo-status-panel" class="mb-6"></div>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <h2 class="font-semibold mb-1">How the pipeline works</h2>
+          <p class="text-sm text-slate-500 mb-4">Four agentic stages, with a human gate before simulation or export.</p>
+          <ol id="pipeline-steps" class="space-y-3 text-sm"></ol>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <h2 class="font-semibold mb-3">High-impact edits awaiting sign-off</h2>
+          <div id="dash-pending" class="space-y-2 text-sm"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DOCUMENTS -->
+    <section id="tab-documents" class="tab-panel hidden">
+      <p class="text-sm text-slate-500 mb-4">Policies with <strong>two or more versions</strong> show detected changes. Upload the same policy again (e.g. 2025 then 2026 NCCI manual) — we version it automatically.</p>
+      <div class="grid md:grid-cols-12 gap-6">
+        <div class="md:col-span-4">
+          <h2 class="font-semibold mb-3 text-sm uppercase tracking-wide text-slate-500">Monitored sources</h2>
+          <div id="doc-list" class="space-y-2"></div>
+        </div>
+        <div class="md:col-span-8">
+          <div id="doc-detail" class="bg-white rounded-xl border border-slate-200 p-6 text-slate-500 text-sm">
+            Select a policy to view its summary, version-to-version changes, and drafted edits.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REVIEW QUEUE -->
+    <section id="tab-review" class="tab-panel hidden">
+      <div class="flex items-center gap-2 mb-4 text-sm">
+        <span class="text-slate-500">Filter:</span>
+        <select id="review-filter" class="border border-slate-300 rounded-md px-2 py-1">
+          <option value="pending">Pending sign-off</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="changes_requested">Changes requested</option>
+          <option value="">All</option>
+        </select>
+      </div>
+      <div id="review-list" class="space-y-4"></div>
+    </section>
+
+    <!-- IMPACT / DOLLARS CAUGHT -->
+    <section id="tab-impact" class="tab-panel hidden">
+      <div id="impact-banner" class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 text-xs text-amber-800 mb-4">
+        Simulation runs approved edits against <strong>synthetic claims</strong> (no PHI). Upload a <strong>PPRRVU*.txt</strong> file from CMS MPFS for Medicare pricing.
+      </div>
+      <div class="flex flex-wrap items-center gap-3 mb-5">
+        <button id="gen-claims-btn" class="px-4 py-2 rounded-md bg-brand-600 text-white text-sm font-medium hover:bg-brand-700">Generate sample claims</button>
+        <button id="sim-all-btn" class="px-4 py-2 rounded-md border border-slate-300 text-sm font-medium hover:bg-slate-50">Simulate all approved edits</button>
+        <button id="import-mpfs-btn" class="px-4 py-2 rounded-md border border-slate-300 text-sm font-medium hover:bg-slate-50">Reload CMS fee schedule</button>
+        <span id="claims-stat" class="text-sm text-slate-500"></span>
+      </div>
+      <div id="impact-summary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>
+      <div id="impact-list" class="space-y-4"></div>
+    </section>
+
+    <!-- INGEST -->
+    <section id="tab-ingest" class="tab-panel hidden">
+      <div class="grid md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <h3 class="font-semibold text-sm mb-1">Upload a document</h3>
+          <p class="text-xs text-slate-500 mb-3">Policy PDFs/DOCX run the pipeline. <strong>PPRRVU*.txt</strong> (CMS MPFS) loads Medicare pricing for Impact. GPCI/HCPCS data files are not policy text.</p>
+          <label id="dropzone" class="block border-2 border-dashed border-slate-300 rounded-lg p-5 text-center text-xs text-slate-500 cursor-pointer hover:border-brand-600 hover:bg-brand-50">
+            <input id="file-input" type="file" class="hidden" accept=".pdf,.docx,.txt,.csv,.md" />
+            <span id="dropzone-label">Click to choose a file or drop it here</span>
+          </label>
+          <div id="upload-status" class="text-xs mt-2"></div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <h3 class="font-semibold text-sm mb-1">Generate a mock policy</h3>
+          <p class="text-xs text-slate-500 mb-3">Creates a synthetic policy in two versions (v1 + v2) so change detection and rule drafting fire on demand.</p>
+          <button id="gen-mock-btn" class="px-3 py-2 rounded-md bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 w-full">Generate mock policy</button>
+          <div id="mock-status" class="text-xs mt-2 text-slate-500"></div>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <h3 class="font-semibold text-sm mb-1 text-amber-800">Note on synthetic data</h3>
+          <p class="text-xs text-amber-700">Uploaded files run through the same pipeline as the seed corpus. Generated policies and claims are clearly labeled <strong>MOCK</strong>; dollar figures are illustrative estimates from a mock fee schedule, not real pricing.</p>
+        </div>
+      </div>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl border border-slate-200 p-6">
+          <h2 class="font-semibold mb-1">Run the pipeline on new policy text</h2>
+          <p class="text-sm text-slate-500 mb-4">Paste a bulletin or policy excerpt. The agents summarize it, diff it against any prior version of the same document, and draft edits for SME review.</p>
+          <form id="ingest-form" class="space-y-3 text-sm">
+            <div class="grid grid-cols-2 gap-3">
+              <label class="block">Source type
+                <select name="source_type" class="mt-1 w-full border border-slate-300 rounded-md px-2 py-1.5">
+                  <option value="cms_bulletin">CMS bulletin</option>
+                  <option value="payer_policy">Payer medical policy</option>
+                  <option value="code_set">Code set</option>
+                  <option value="contract">Contract</option>
+                  <option value="clinical_guideline">Clinical practice guideline</option>
+                </select>
+              </label>
+              <label class="block">Version label
+                <input name="version_label" required placeholder="e.g. 2025-Q3" class="mt-1 w-full border border-slate-300 rounded-md px-2 py-1.5" />
+              </label>
+            </div>
+            <label class="block">Source name
+              <input name="source_name" required placeholder="e.g. CMS NCCI Policy Manual" class="mt-1 w-full border border-slate-300 rounded-md px-2 py-1.5" />
+            </label>
+            <label class="block">Document title
+              <input name="title" required placeholder="Chapter I — General Correct Coding Policies…" class="mt-1 w-full border border-slate-300 rounded-md px-2 py-1.5" />
+            </label>
+            <label class="block">Effective date
+              <input name="effective_date" type="date" class="mt-1 w-full border border-slate-300 rounded-md px-2 py-1.5" />
+            </label>
+            <label class="block">Policy text
+              <textarea name="raw_text" required rows="9" placeholder="Paste policy text…" class="mt-1 w-full border border-slate-300 rounded-md px-2 py-1.5 font-mono text-xs"></textarea>
+            </label>
+            <div class="flex gap-2">
+              <button type="submit" class="px-4 py-2 rounded-md bg-brand-600 text-white font-medium hover:bg-brand-700">Run pipeline</button>
+              <button type="button" id="ingest-example" class="px-4 py-2 rounded-md border border-slate-300 hover:bg-slate-50">Load example</button>
+            </div>
+          </form>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-6">
+          <h2 class="font-semibold mb-3">Pipeline output</h2>
+          <div id="ingest-output" class="text-sm text-slate-500">Run the pipeline to see the summary, detected changes, and drafted edits here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUDIT -->
+    <section id="tab-audit" class="tab-panel hidden">
+      <h2 class="font-semibold mb-3">Audit trail</h2>
+      <p class="text-sm text-slate-500 mb-4">Every agent action and every human decision is recorded — the compliance backbone of the human-in-the-loop design.</p>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-slate-500 text-left text-xs uppercase tracking-wide">
+            <tr><th class="px-4 py-2">When</th><th class="px-4 py-2">Actor</th><th class="px-4 py-2">Action</th><th class="px-4 py-2">Detail</th></tr>
+          </thead>
+          <tbody id="audit-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Review modal -->
+  <div id="modal" class="fixed inset-0 bg-black/40 hidden z-30 grid place-items-center p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-auto p-6" id="modal-body"></div>
+  </div>
+
+  <div id="toast" class="fixed bottom-6 right-6 z-40 hidden px-4 py-2 rounded-lg bg-ink text-white text-sm shadow-lg"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
